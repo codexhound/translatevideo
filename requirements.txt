@@ -1,5 +1,4 @@
 pycountry>=24.6.1
 pandas>=2.2.3
-IMDbPY>=2022.7.9
 translatehtml>=1.5.2
 argostranslate>=1.9.6

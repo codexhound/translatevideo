@@ -1,44 +1,57 @@
-# translate-html
-Translate HTML using [Beautiful Soup](https://beautiful-soup-4.readthedocs.io/en/latest/) and [Argos Translate](https://github.com/argosopentech/argos-translate)
-
 ## Install
 ```
-pip install translatehtml
+- Download and install ffpmeg (https://www.ffmpeg.org/download.html)
+	- Add bin path to enviornment path variable
+
+- Download and install Whisper CPP. https://github.com/ggerganov/whisper.cpp.
+	Windows:
+	- For GPU support install the Vulkan SD and add to enviornment paths prior to compiling for Vulkan
+	- Install w64devkit for C++ compiler. When compiling insert the flag -G "MinGW Makefiles"
+		Example if compiling with Vulkan GPU support: cmake -B build -DGGML_VULKAN=1 -G "MinGW Makefiles"
+	- After compiling download some models. See github.
+	- Add whispercpp build/bin to windows enviornment variables
+
+- git clone https://github.com/codexhound/translatevideo.git
+
+- python setup.py install
+
+- See examples for usage 
+	- Setup config.tsv
+	- Need to set an english only and nonenglish model as below in config
+		C:\Software\whisper.cpp\models\ggml-large-v3-turbo-q5_0.bin	Model	0	nonenglishmodel
+		C:\Software\whisper.cpp\models\ggml-small.en-q5_0.bin	Model	0	englishmodel
+	- Need to set at least 1 videos path:
+		D:\Share\VIDEOS\Movies	Movies	0	videopath
+	- Need to set a temporary directory
+		D:\Share\tempgensubtitles	Temp	0	tempdir
+
+- Usage Command Line:
+	python generatesubtitles.py
+- Usuage Python
+	import translatevideo
+	generatesubtitles()
+	
+```
+# translatevideo
 ```
 
-## [Example](examples/)
-```python
-import argostranslate.package, argostranslate.translate
-import translatehtml
+-Bulk scans video files and transribes and translates video audio into srt subtitle files. Places srt files adjacent to video files.
 
-from_code = "es"
-to_code = "en"
+Currently only translates into English from other languages. Fastest when transcribing english audio.
 
-html_doc = """<div><h1>Perro</h1></div>"""
+Free, all processing is done locally. There is no api. Uses whisper cpp and argos translate to do the transribing and transcription.
 
-# Download and install Argos Translate package
-available_packages = argostranslate.package.get_available_packages()
-available_package = list(
-    filter(
-        lambda x: x.from_code == from_code and x.to_code == to_code, available_packages
-    )
-)[0]
-download_path = available_package.download()
-argostranslate.package.install_from_path(download_path)
+```
+# Future additions:
+```
 
-# Translate
-installed_languages = argostranslate.translate.get_installed_languages()
-from_lang = list(filter(lambda x: x.code == from_code, installed_languages))[0]
-to_lang = list(filter(lambda x: x.code == to_code, installed_languages))[0]
+Translate into other languages besides English
 
-translation = from_lang.get_translation(to_lang)
-
-translated_soup = translatehtml.translate_html(translation, html_doc)
-
-print(translated_soup)
+Generate merged srt files (with the from language and the translated too language side by side
 
 ```
 
-## Links
-- [OpenNMT Forum](https://forum.opennmt.net/t/suggestions-for-translating-xml/4409)
-- [GitHub Discussion](https://github.com/argosopentech/argos-translate/discussions/158)
+
+
+
+

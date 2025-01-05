@@ -1,0 +1,6 @@
+filepath	name	isseries	type
+D:\Share\tempgensubtitles	Temp	0	tempdir
+D:\Share\VIDEOS\test	Movies	0	videopath
+C:\Software\whisper.cpp\models\ggml-large-v3-turbo-q5_0.bin	Model	0	nonenglishmodel
+C:\Software\whisper.cpp\models\ggml-small.en-q5_0.bin	Model	0	englishmodel
+
