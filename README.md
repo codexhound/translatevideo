@@ -18,7 +18,7 @@
 	pip install --upgrade  translatevideo@git+https://github.com/codexhound/translatevideo
 
 - See examples for usage
-	- Setup config.tsv
+	- Setup config.tsv (tab delimited, seperate options by tab)
 	- Need to set an english only and nonenglish model as below in config
 		C:\Software\whisper.cpp\models\ggml-large-v3-turbo-q5_0.bin	Model	0	nonenglishmodel
 		C:\Software\whisper.cpp\models\ggml-small.en-q5_0.bin	Model	0	englishmodel
