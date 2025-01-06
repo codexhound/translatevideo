@@ -11,7 +11,8 @@
 	- After compiling download some models. See github.
 	- Add whispercpp build/bin to windows enviornment variables
 
-- Install TranslateVideo 
+- Install TranslateVideo
+	required: need python 3.8 or 3.9 (https://www.python.org/downloads/release/python-390/)
 	pip install --upgrade translatevideo
 	or
 	pip install --upgrade  translatevideo@git+https://github.com/codexhound/translatevideo
