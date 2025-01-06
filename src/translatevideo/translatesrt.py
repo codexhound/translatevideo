@@ -2,7 +2,7 @@ import re
 from bs4 import BeautifulSoup
 import argostranslate.package, argostranslate.translate
 import translatehtml
-from utilities import *
+import translatevideo.utilities as utilities
     
 def add_tags_to_text(text, tags):
     value = text
@@ -42,7 +42,7 @@ def process_srt(file_path):
             for tag in soup.find_all():
                 tags.append(tag.name)
             linetext = (current_timecode,clean_text,tags)
-            append_to_key(sections, current_id, linetext)
+            utilities.append_to_key(sections, current_id, linetext)
         
     file_string = ''
     for key in sections:
@@ -70,9 +70,9 @@ def gen_translated_dict(soup):
             for tag in non_p_tags:
                 if tag is not None:
                     tagid = tag.name.replace('id', '')
-                    subtitleid = convert_string_to_int(tagid)
+                    subtitleid = utilities.convert_string_to_int(tagid)
                     subtitletext = tag.get_text()
-                    append_to_key(translated_subtitles, subtitleid, subtitletext.strip())
+                    utilities.append_to_key(translated_subtitles, subtitleid, subtitletext.strip())
     return translated_subtitles
     
 def gen_srt_file(translated_subtitles, original_formatting):
@@ -113,7 +113,7 @@ def translate_srt(from_code,to_code, input_file, output_file, log_filepath, writ
     try:
         translation = from_lang.get_translation(to_lang)
     except Exception as e:
-        append_to_file(log_filepath, f'     Translator Error in Language lookup: {str(e)}')
+        utilities.append_to_file(log_filepath, f'     Translator Error in Language lookup: {str(e)}')
         error = 1
     try:
         translated_soup = translatehtml.translate_html(translation, file_string)

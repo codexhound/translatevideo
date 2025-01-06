@@ -1,29 +1,7 @@
-#import argparse
+import translatevideo.scansubtitles as scansubtitles
+import translatevideo.genaisubtitles as genaisubtitles
 import os
-from scansubtitles import *
-from genaisubtitles import *
 import pandas as pd
-
-'''
-parser = argparse.ArgumentParser(description='Script so useful.')
-parser.add_argument("tempdir")
-parser.add_argument("dirpath1")
-parser.add_argument("dirname1")
-parser.add_argument("dirpath2")
-parser.add_argument("dirname2")
-parser.add_argument("istv1")
-parser.add_argument("istv2")
-
-args = parser.parse_args()
-
-tempdir = args.tempdir
-dirpath1 = args.dirpath1
-dirname1 = args.dirname1
-dirpath2 = args.dirpath2
-dirname2 = args.dirname2
-istv1 = args.istv1
-istv2 = args.istv2
-'''
 
 def gensubtitles():
     # Path to the TSV file
@@ -67,13 +45,14 @@ def gensubtitles():
     print(f'Temp Directory: {tempdir}')
     print(f'Video Processing Info: {filepathlist}')
 
-    scansubtitles(filepathlist)
-    genaisubtitles(tempdir, filepathlist, englishmodel, nonenglishmodel)
+    scansubtitles.scansubtitles(filepathlist)
+    genaisubtitles.genaisubtitles(tempdir, filepathlist, englishmodel, nonenglishmodel)
+	
+# Defining main function
+def main():
+    gensubtitles()
 
-#########################################################################  
-  
-gensubtitles()
-
-#########################################################################  
-
-
+# Using the special variable 
+# __name__
+if __name__=="__main__":
+    main()

@@ -5,11 +5,11 @@ import json
 import pycountry
 import pandas as pd
 import csv
-from utilities import *
-from concatsrtfiles import *
-from removeduplicatelinessrt import *
+import translatevideo.utilities as utilities
+import translatevideo.concatsrtfiles as concatsrtfiles
+import translatevideo.removeduplicatelinessrt as removeduplicatelinessrt
 from pathlib import Path
-from translatesrt import *
+import translatevideo.translatesrt as translatesrt
 import json
 
 def get_directory_name_from_path(path,is_series=False):
@@ -23,6 +23,7 @@ def get_directory_name_from_path(path,is_series=False):
         parent_directory = path.parent.name
     return parent_directory
 
+'''
 def get_video_language(video_name,log_filepath):
     ia = imdb.IMDb()
     append_to_file(log_filepath, f'      Searching Language Info for video: {video_name}')
@@ -44,6 +45,7 @@ def get_video_language(video_name,log_filepath):
         return first_language
     
     else: return 'Unknown'
+'''
 
 def convert_language_code(three_letter_code):
     try:
@@ -67,13 +69,13 @@ def get_top_audio_stream(video_path,log_filepath):
     # Run ffprobe to get audio track information
     video_path=f'\"{video_path}\"'
     command = f'ffprobe -v error -show_entries stream=index:stream_tags=language -select_streams a -of json {video_path}'
-    append_to_file(log_filepath, '      Running ffprobe command: ' + str(command))
+    utilities.append_to_file(log_filepath, '      Running ffprobe command: ' + str(command))
     audio_tracks = None
     try:
         audio_tracks = json.loads(subprocess.check_output(command))
     except subprocess.CalledProcessError as e:
         error = e.returncode
-        append_to_file(log_filepath, '      Failed to run ffprobe command, errorcode: ' + str(error))
+        utilities.append_to_file(log_filepath, '      Failed to run ffprobe command, errorcode: ' + str(error))
     top_audio_stream = None
     top_audio_language = None
     for stream in audio_tracks.get('streams', []):
@@ -116,14 +118,14 @@ def get_language_from_whisper(output_dir, video_path,nonenglishmodel,log_filepat
     full_json_path = os.path.join(output_dir, f"{file_name}.json")
     
     command = f'whisper-cli \"{wav_path}\" -m {nonenglish_model_quotes} -l auto -dl --output-json-full --output-file \"{split_wav_path}\"'
-    append_to_file(log_filepath, '      Running whisper command: ' + str(command))
+    utilities.append_to_file(log_filepath, '      Running whisper command: ' + str(command))
     lang_code = 'auto'
     error = 0
     try:
         language = subprocess.check_output(command)
     except subprocess.CalledProcessError as e:
         error = e.returncode
-        append_to_file(log_filepath, '      Failed to run whisper command, errorcode: ' + str(error))
+        utilities.append_to_file(log_filepath, '      Failed to run whisper command, errorcode: ' + str(error))
     if error == 0:
         # Load JSON data from a file
         with open(full_json_path, 'r', encoding='utf-8') as file:
@@ -141,21 +143,21 @@ def convert_audio_to_wav(video_path, output_dir,top_audio_stream,log_filepath):
     wav_path=f'\"{wav_path}\"'
     # Convert the first audio track to .wav using ffmpeg
     command = f'ffmpeg -y -i {video_path} -map 0:a:{str(top_audio_stream)} -vn -acodec pcm_s16le -ac 1 -ar 16000 {wav_path}'
-    append_to_file(log_filepath, '      Running ffmpeg command: ' + str(command))
+    utilities.append_to_file(log_filepath, '      Running ffmpeg command: ' + str(command))
     error = 0
     try:
         subprocess.check_output(command)
     except subprocess.CalledProcessError as e:
         error = e.returncode
-        append_to_file(log_filepath, '      Failed to run ffpmeg command, errorcode: ' + str(error))
+        utilities.append_to_file(log_filepath, '      Failed to run ffpmeg command, errorcode: ' + str(error))
     
     command = f'ffmpeg -i {wav_path} -f segment -segment_time 900 -c copy \"{split_wav_path}_%03d.wav\"'
-    append_to_file(log_filepath, '      Running ffmpeg command: ' + str(command))
+    utilities.append_to_file(log_filepath, '      Running ffmpeg command: ' + str(command))
     try:
         subprocess.check_output(command)
     except subprocess.CalledProcessError as e:
         error = e.returncode
-        append_to_file(log_filepath, '      Failed to run ffpmeg command, errorcode: ' + str(error))
+        utilities.append_to_file(log_filepath, '      Failed to run ffpmeg command, errorcode: ' + str(error))
     return error
 
 def remove_files_with_prefix(directory, prefix,log_filepath):
@@ -168,9 +170,9 @@ def remove_files_with_prefix(directory, prefix,log_filepath):
             file_path = os.path.join(directory, file)
             try:
                 os.remove(file_path)
-                append_to_file(log_filepath,f"      Removed file: {file_path}")
+                utilities.append_to_file(log_filepath,f"      Removed file: {file_path}")
             except Exception as e:
-                append_to_file(log_filepath,f"      Error removing file {file_path}: {e}")
+                utilities.append_to_file(log_filepath,f"      Error removing file {file_path}: {e}")
     
 def concat_subtitle_files(output_dir,file_name,wavelist):
     subtitle_files = []
@@ -180,14 +182,14 @@ def concat_subtitle_files(output_dir,file_name,wavelist):
         filename = os.path.join(output_dir, f"{file_name}_{str(count)}.srt")
         subtitle_files.append(filename)
         count = count + 1
-    concatenate_and_adjust_srt_files(final_subtile_file, 900000, subtitle_files)
+    concatsrtfiles.concatenate_and_adjust_srt_files(final_subtile_file, 900000, subtitle_files)
     
 def get_language(output_dir, nonenglishmodel, video_path, top_audio_language, log_filepath, is_series = False):
     language = top_audio_language
     lang_code = convert_language_code(top_audio_language) ##top audio language is 3 char, convert from 3 char to 2 char code
     if (lang_code) == 'auto': ## if not found, then try try getting the language from whisper
         lang_code = get_language_from_whisper(output_dir, video_path,nonenglishmodel,log_filepath)
-    append_to_file(log_filepath, f'      Found language: {language}, Language Code: {lang_code}')
+    utilities.append_to_file(log_filepath, f'      Found language: {language}, Language Code: {lang_code}')
     return language, lang_code
 
 def run_whisper_cli(englishmodel, nonenglishmodel,video_path, output_dir,lang_code,log_filepath):
@@ -205,23 +207,23 @@ def run_whisper_cli(englishmodel, nonenglishmodel,video_path, output_dir,lang_co
         nonenglish_model_quotes = f'\"{nonenglishmodel}\"'
         if lang_code == 'en':
             command = f'whisper-cli -m {english_model_quotes} -f {wave_file_quotes} --output-srt --output-file \"{srt_path}_{str(count)}\" --language {lang_code}'
-            append_to_file(log_filepath, '      Running Whisper Command: ' + str(command))
+            utilities.append_to_file(log_filepath, '      Running Whisper Command: ' + str(command))
             try:
                 subprocess.check_output(command)
             except subprocess.CalledProcessError as e:
                 error = e.returncode
-                append_to_file(log_filepath, '      Failed to run ai gen command, errorcode: ' + str(error))
+                utilities.append_to_file(log_filepath, '      Failed to run ai gen command, errorcode: ' + str(error))
         else:
             command = f'whisper-cli -m {nonenglish_model_quotes} -f {wave_file_quotes} --output-srt --output-file \"{srt_path}_{str(count)}\" --language {lang_code}'
-            append_to_file(log_filepath, '      Running Whisper Command: ' + str(command))
+            utilities.append_to_file(log_filepath, '      Running Whisper Command: ' + str(command))
             try:
                 subprocess.check_output(command)
             except subprocess.CalledProcessError as e:
                 error = e.returncode
-                append_to_file(log_filepath, '      Failed to run ai gen command, errorcode: ' + str(error))
+                utilities.append_to_file(log_filepath, '      Failed to run ai gen command, errorcode: ' + str(error))
         count = count + 1
     
-    append_to_file(log_filepath, f'      Merging Subtitle files into {file_name}1.srt')
+    utilities.append_to_file(log_filepath, f'      Merging Subtitle files into {file_name}1.srt')
     concat_subtitle_files(output_dir,file_name,wavelist)
     
     final_subtile_file = os.path.join(output_dir, f"{file_name}1.srt")
@@ -230,16 +232,16 @@ def run_whisper_cli(englishmodel, nonenglishmodel,video_path, output_dir,lang_co
     srt_path_full_quotes = f'\"{srt_path_full}\"'
     
     if lang_code == 'en':
-        append_to_file(log_filepath, f'      Placing Merged srt file into final path: {srt_path_full}')
-        move_and_rename_file(final_subtile_file, srt_path_full,log_filepath)
+        utilities.append_to_file(log_filepath, f'      Placing Merged srt file into final path: {srt_path_full}')
+        utilities.move_and_rename_file(final_subtile_file, srt_path_full,log_filepath)
     elif lang_code != 'auto': ##need to translate the subtitle file if it's not english
-        append_to_file(log_filepath, f'      Translating {lang_code} into english. Placing into {srt_path_full}')
-        error = translate_srt(lang_code,'en', final_subtile_file, srt_path_full, log_filepath)
-    append_to_file(log_filepath, f'      Removing Duplicate SRT Lines in {srt_path_full}')
+        utilities.append_to_file(log_filepath, f'      Translating {lang_code} into english. Placing into {srt_path_full}')
+        error = translatesrt.translate_srt(lang_code,'en', final_subtile_file, srt_path_full, log_filepath)
+    utilities.append_to_file(log_filepath, f'      Removing Duplicate SRT Lines in {srt_path_full}')
     try:
-        remove_adjacent_duplicate_text_lines(srt_path_full)
+        removeduplicatelinessrt.remove_adjacent_duplicate_text_lines(srt_path_full)
     except Exception as e:
-        append_to_file(log_filepath, f'      Error Removing Adjacent Duplicate Text Lines: {str(e)}')
+        utilities.append_to_file(log_filepath, f'      Error Removing Adjacent Duplicate Text Lines: {str(e)}')
         error = 1
     return error
 
@@ -247,7 +249,7 @@ def move_output_file(video_dir, temp_directory, video_file_name,log_filepath):
     # Move the output file from tempwavefiles to the video file directory
     final_path = os.path.join(video_dir, f"{video_file_name}_ai_en.srt")
     output_file = os.path.join(temp_directory, f"{video_file_name}_ai_en.srt")
-    move_and_rename_file(output_file, final_path,log_filepath)
+    utilities.move_and_rename_file(output_file, final_path,log_filepath)
         
 # Filter out rows where any row in the group has English subtitles
 def filter_groups(group):
@@ -258,7 +260,7 @@ def filter_groups(group):
 def process_videos(tempwavefiles,dirname,englishmodel, nonenglishmodel,is_series = False):
     # Read the tab-delimited file
     log_filepath = f'GenAI_Logs/GenAILog_{dirname}.txt'
-    remove_file(log_filepath)
+    utilities.remove_file(log_filepath)
     subtitles_df = pd.read_csv(f'GenAI_Logs/df_{dirname}.tsv', sep='\t')
     grouped_df = subtitles_df.groupby('filepath')
 
@@ -269,23 +271,23 @@ def process_videos(tempwavefiles,dirname,englishmodel, nonenglishmodel,is_series
     for index, row in filtered_groups_no_subtitles.iterrows():
         video_path = row['filepath']
         video_path_file_name = os.path.splitext(os.path.basename(video_path))[0]
-        append_to_file(log_filepath, 'Processing video file: ' + video_path)
+        utilities.append_to_file(log_filepath, 'Processing video file: ' + video_path)
         top_audio_stream, top_audio_language = get_top_audio_stream(video_path,log_filepath)
         convert_audio_to_wav(video_path, tempwavefiles,top_audio_stream,log_filepath)
         language, lang_code = get_language(tempwavefiles, nonenglishmodel,video_path, top_audio_language, log_filepath, is_series)
         if lang_code != 'auto':
-            append_to_file(log_filepath, '      Generating subtitles for audio stream index: ' + str(top_audio_stream) + ', audio language: ' + str(lang_code))
+            utilities.append_to_file(log_filepath, '      Generating subtitles for audio stream index: ' + str(top_audio_stream) + ', audio language: ' + str(lang_code))
             error = run_whisper_cli(englishmodel, nonenglishmodel,video_path, tempwavefiles,lang_code,log_filepath)
             if(error == 0):
                 # Move the output .srt file
                 directory = os.path.dirname(video_path)
                 move_output_file(directory,tempwavefiles,video_path_file_name,log_filepath)
             else:
-                    append_to_file(log_filepath, f'      Error: {error} in Transcription / Translating File. Skipping: {video_path}')
+                    utilities.append_to_file(log_filepath, f'      Error: {error} in Transcription / Translating File. Skipping: {video_path}')
         else:
-            append_to_file(log_filepath, f'      Language Not recognized. Skipping {video_path}')
-        remove_files_with_prefix(tempwavefiles, video_path_file_name,log_filepath)  
-
+            utilities.append_to_file(log_filepath, f'      Language Not recognized. Skipping {video_path}')
+        remove_files_with_prefix(tempwavefiles, video_path_file_name,log_filepath)
+        
 def genaisubtitles(tempdir, filepathlist, englishmodel, nonenglishmodel):
     # Create the temp directory if it doesn't exist
     os.makedirs(tempdir, exist_ok=True)

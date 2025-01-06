@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+[project]
+name = "translatevideo"
+version = "0.5.0"
+keywords = ["translation", "subtitles", "transcription", "srt", "plex"]
+authors = [
+  { name="codexhound"},
+]
+license = {text = "MIT License"}
+description = "Bulk Generate SRT Subtitles From Video Locally No API Needed"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+  "pycountry",
+  "pandas",
+  "translatehtml",
+  "argostranslate",
+]
+[project.urls]
+Homepage = "https://github.com/codexhound/translatevideo"
+Issues = "https://github.com/codexhound/translatevideo/issues"
+[project.scripts]
+translatevideo = "translatevideo:gensubtitles.main"

@@ -1,4 +1,0 @@
-pycountry>=24.6.1
-pandas>=2.2.3
-translatehtml>=1.5.2
-argostranslate>=1.9.6

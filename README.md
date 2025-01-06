@@ -11,9 +11,10 @@
 	- After compiling download some models. See github.
 	- Add whispercpp build/bin to windows enviornment variables
 
-- git clone https://github.com/codexhound/translatevideo.git
-
-- python setup.py install
+- Install TranslateVideo 
+	pip install --upgrade translatevideo
+	or
+	pip install --upgrade  git+git://github.com/codexhound/translatevideo@main
 
 - See examples for usage 
 	- Setup config.tsv
@@ -26,15 +27,14 @@
 		D:\Share\tempgensubtitles	Temp	0	tempdir
 
 - Usage Command Line:
-	python generatesubtitles.py
+	translatevideo
 - Usuage Python
-	import translatevideo
-	generatesubtitles()
+	import translatevideo.gensubtitles as gensubtitles
+	gensubtitles.generatesubtitles()
 	
 ```
 # translatevideo
 ```
-
 -Bulk scans video files and transribes and translates video audio into srt subtitle files. Places srt files adjacent to video files.
 
 Currently only translates into English from other languages. Fastest when transcribing english audio.

@@ -1,3 +1,0 @@
-import translatevideo
-
-generatesubtitles()
