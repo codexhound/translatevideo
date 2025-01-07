@@ -53,12 +53,6 @@ def process_srt(file_path):
         file_string = file_string + '</div>'
     return file_string, sections
 
-# Function to append to a key in the dictionary
-def append_to_key(dictionary, key, value):
-    if key not in dictionary:
-        dictionary[key] = []
-    dictionary[key].append(value)
-
 def gen_translated_dict(soup):
     # Find all div elements
     souphtml = BeautifulSoup(str(soup),"html.parser")

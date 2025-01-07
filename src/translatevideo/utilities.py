@@ -1,6 +1,12 @@
 import os
 import re
 
+# Function to append to a key in the dictionary
+def append_to_key(dictionary, key, value):
+    if key not in dictionary:
+        dictionary[key] = []
+    dictionary[key].append(value)
+
 def is_numeric_1_to_9(value):
     return value.isdigit() and all('1' <= char <= '9' for char in value)
 
