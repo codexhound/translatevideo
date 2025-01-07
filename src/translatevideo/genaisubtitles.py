@@ -228,7 +228,7 @@ def run_whisper_cli(englishmodel, nonenglishmodel,video_path, output_dir,lang_co
     
     final_subtile_file = os.path.join(output_dir, f"{file_name}1.srt")
     final_subtile_file_quotes = f'\"{final_subtile_file}\"'
-    srt_path_full = os.path.join(output_dir, f"{file_name}_ai_en.srt")
+    srt_path_full = os.path.join(output_dir, f"{file_name}_ai.en.sdh.srt")
     srt_path_full_quotes = f'\"{srt_path_full}\"'
     
     if lang_code == 'en':
@@ -247,8 +247,8 @@ def run_whisper_cli(englishmodel, nonenglishmodel,video_path, output_dir,lang_co
 
 def move_output_file(video_dir, temp_directory, video_file_name,log_filepath):
     # Move the output file from tempwavefiles to the video file directory
-    final_path = os.path.join(video_dir, f"{video_file_name}_ai_en.srt")
-    output_file = os.path.join(temp_directory, f"{video_file_name}_ai_en.srt")
+    final_path = os.path.join(video_dir, f"{video_file_name}_ai.en.sdh.srt")
+    output_file = os.path.join(temp_directory, f"{video_file_name}_ai.en.sdh.srt")
     utilities.move_and_rename_file(output_file, final_path,log_filepath)
         
 # Filter out rows where any row in the group has English subtitles

@@ -9,7 +9,7 @@ import csv
 
 def find_srt_file_by_filename(video_path, directory, search_string,subtitles_df):
     for root, _, files in os.walk(directory):
-        for file in fnmatch.filter(files, '*_ai_en.srt'):
+        for file in fnmatch.filter(files, '*_ai.en.sdh.srt'):
             if search_string in file:
                 filepath = os.path.join(root, file)
                 subtitles_df.loc[len(subtitles_df)] = {
