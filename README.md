@@ -1,3 +1,17 @@
+# translatevideo
+```
+-Bulk scans video files and transribes and translates video audio into srt subtitle files. Places srt files adjacent to video files.
+
+--Runs on windows/linux/mac
+
+--AMD/Intel/Nvidia GPU compatibility on windows/mac/linux using whisper CPP - Vulkan. Unlike whisper python which is only compatible with NVIDIA GPU's.
+
+Currently only translates into English from other languages. Fastest when transcribing english audio.
+
+Free, all processing is done locally. There is no api. Uses whisper cpp and argos translate to do the transribing and transcription.
+
+```
+
 ## Install
 ```
 - Download and install ffpmeg (https://www.ffmpeg.org/download.html)
@@ -34,15 +48,7 @@
 	gensubtitles.generatesubtitles()
 	
 ```
-# translatevideo
-```
--Bulk scans video files and transribes and translates video audio into srt subtitle files. Places srt files adjacent to video files.
 
-Currently only translates into English from other languages. Fastest when transcribing english audio.
-
-Free, all processing is done locally. There is no api. Uses whisper cpp and argos translate to do the transribing and transcription.
-
-```
 # Future additions:
 ```
 
