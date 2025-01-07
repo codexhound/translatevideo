@@ -214,7 +214,7 @@ def run_whisper_cli(englishmodel, nonenglishmodel,video_path, output_dir,lang_co
                 error = e.returncode
                 utilities.append_to_file(log_filepath, '      Failed to run ai gen command, errorcode: ' + str(error))
         else:
-            command = f'whisper-cli -m {nonenglish_model_quotes} -f {wave_file_quotes} --output-srt --output-file \"{srt_path}_{str(count)}\" --language {lang_code}'
+            command = f'whisper-cli -m {nonenglish_model_quotes} -f {wave_file_quotes} --output-srt --output-file \"{srt_path}_{str(count)}\" --language {lang_code} --translate'
             utilities.append_to_file(log_filepath, '      Running Whisper Command: ' + str(command))
             try:
                 subprocess.check_output(command)
