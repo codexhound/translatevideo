@@ -8,44 +8,8 @@ import csv
 import translatevideo.utilities as utilities
 import translatevideo.concatsrtfiles as concatsrtfiles
 import translatevideo.removeduplicatelinessrt as removeduplicatelinessrt
-from pathlib import Path
 import translatevideo.translatesrt as translatesrt
 import json
-
-def get_directory_name_from_path(path,is_series=False):
-    path = Path(path)
-    if is_series == True:
-        if path.parent.parent != path.root:
-            parent_directory = path.parent.parent.name
-        else:
-            parent_directory = path.parent.name
-    else:
-        parent_directory = path.parent.name
-    return parent_directory
-
-'''
-def get_video_language(video_name,log_filepath):
-    ia = imdb.IMDb()
-    append_to_file(log_filepath, f'      Searching Language Info for video: {video_name}')
-    try:
-        search_movie = ia.search_movie(video_name)
-    except:
-        return 'Unknown'
-    if len(search_movie) > 0:
-        append_to_file(log_filepath, f'      Found video info: {video_name}')
-        code = search_movie[0].getID()
-        # getting information
-        series = ia.get_movie(code)
- 
-        # getting languages of the series
-        languages = series.data['languages']
-        first_language = languages[0]
-        append_to_file(log_filepath, f'      First Language {first_language}')
-        
-        return first_language
-    
-    else: return 'Unknown'
-'''
 
 def convert_language_code(three_letter_code):
     try:
@@ -184,7 +148,7 @@ def concat_subtitle_files(output_dir,file_name,wavelist):
         count = count + 1
     concatsrtfiles.concatenate_and_adjust_srt_files(final_subtile_file, 900000, subtitle_files)
     
-def get_language(output_dir, nonenglishmodel, video_path, top_audio_language, log_filepath, is_series = False):
+def get_language(output_dir, nonenglishmodel, video_path, top_audio_language, log_filepath):
     language = top_audio_language
     lang_code = convert_language_code(top_audio_language) ##top audio language is 3 char, convert from 3 char to 2 char code
     if (lang_code) == 'auto': ## if not found, then try try getting the language from whisper
@@ -257,7 +221,7 @@ def filter_groups(group):
         return group.iloc[0:0]
     return group
         
-def process_videos(tempwavefiles,dirname,englishmodel, nonenglishmodel,is_series = False):
+def process_videos(tempwavefiles,dirname,englishmodel, nonenglishmodel):
     # Read the tab-delimited file
     log_filepath = f'GenAI_Logs/GenAILog_{dirname}.txt'
     utilities.remove_file(log_filepath)
@@ -274,7 +238,7 @@ def process_videos(tempwavefiles,dirname,englishmodel, nonenglishmodel,is_series
         utilities.append_to_file(log_filepath, 'Processing video file: ' + video_path)
         top_audio_stream, top_audio_language = get_top_audio_stream(video_path,log_filepath)
         convert_audio_to_wav(video_path, tempwavefiles,top_audio_stream,log_filepath)
-        language, lang_code = get_language(tempwavefiles, nonenglishmodel,video_path, top_audio_language, log_filepath, is_series)
+        language, lang_code = get_language(tempwavefiles, nonenglishmodel,video_path, top_audio_language, log_filepath)
         if lang_code != 'auto':
             utilities.append_to_file(log_filepath, '      Generating subtitles for audio stream index: ' + str(top_audio_stream) + ', audio language: ' + str(lang_code))
             error = run_whisper_cli(englishmodel, nonenglishmodel,video_path, tempwavefiles,lang_code,log_filepath)
@@ -292,5 +256,5 @@ def genaisubtitles(tempdir, filepathlist, englishmodel, nonenglishmodel):
     # Create the temp directory if it doesn't exist
     os.makedirs(tempdir, exist_ok=True)
     for file in filepathlist:
-        filepath,name,isseries = file
-        process_videos(tempdir,name,englishmodel, nonenglishmodel,isseries)
+        filepath,name = file
+        process_videos(tempdir,name,englishmodel, nonenglishmodel)

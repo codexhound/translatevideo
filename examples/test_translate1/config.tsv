@@ -1,7 +1,7 @@
-filepath	name	isseries	type
-D:\Share\tempgensubtitles	Temp	0	tempdir
-D:\Share\VIDEOS\Movies	Movies	0	videopath
-D:\Share\VIDEOS\Shows	Shows	1	videopath
-C:\Software\whisper.cpp\models\ggml-large-v3-turbo-q5_0.bin	Model	0	nonenglishmodel
-C:\Software\whisper.cpp\models\ggml-small.en-q5_0.bin	Model	0	englishmodel
+filepath	name	type
+D:\Share\tempgensubtitles	Temp	tempdir
+D:\Share\VIDEOS\Movies	Movies	videopath
+D:\Share\VIDEOS\Shows	Shows	videopath
+C:\Software\whisper.cpp\models\ggml-large-v3-turbo-q5_0.bin	Model	nonenglishmodel
+C:\Software\whisper.cpp\models\ggml-small.en-q5_0.bin	Model	englishmodel
 

@@ -20,9 +20,8 @@ def gensubtitles():
         configtype = row['type']
         filepath = row['filepath']
         name = row['name']
-        isseries = int(row['isseries'])
         if configtype == 'videopath':
-            filepathlist.append((filepath,name,isseries))
+            filepathlist.append((filepath,name))
         elif configtype == 'tempdir':
             tempdir = filepath
         elif configtype == 'nonenglishmodel':
