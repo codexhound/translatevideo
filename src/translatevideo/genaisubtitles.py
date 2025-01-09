@@ -254,6 +254,7 @@ def process_videos(tempwavefiles,dirname,englishmodel, nonenglishmodel):
         
 def genaisubtitles(tempdir, filepathlist, englishmodel, nonenglishmodel):
     # Create the temp directory if it doesn't exist
+    translatesrt.updateTranslationPackages()
     os.makedirs(tempdir, exist_ok=True)
     for file in filepathlist:
         filepath,name = file

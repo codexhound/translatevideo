@@ -98,6 +98,17 @@ def write_translated_srt(output_srt,linelist):
             file.write(encoded_item)
             
             
+def updateTranslationPackages():
+    # Update the package index
+    argostranslate.package.update_package_index()
+
+    # Get the available packages
+    available_packages = argostranslate.package.get_available_packages()
+
+    # Install all available language packages
+    for package in available_packages:
+        argostranslate.package.install_from_path(package.download())      
+            
 def translate_srt(from_code,to_code, input_file, output_file, log_filepath, write_merged_language_file = False):
     file_string, original_formatting = process_srt(input_file)
     installed_languages = argostranslate.translate.get_installed_languages()
