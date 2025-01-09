@@ -31,6 +31,8 @@ Free, all processing is done locally. There is no api. Uses whisper cpp and argo
 	or
 	pip install --upgrade  translatevideo@git+https://github.com/codexhound/translatevideo
 
+	Or download and unzip the release for windows
+
 - See examples for usage
 	- Setup config.tsv (tab delimited, seperate options by tab)
 	- Need to set an english only and nonenglish model as below in config
