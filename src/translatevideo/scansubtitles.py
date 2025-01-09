@@ -80,5 +80,5 @@ def process_videos(directory,table_path):
     
 def scansubtitles(filepathlist):
     for file in filepathlist:
-        filepath,name,isseries = file
+        filepath,name = file
         process_videos(filepath,f'df_{name}.tsv')
