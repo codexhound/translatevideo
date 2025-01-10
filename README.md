@@ -36,12 +36,12 @@ Free, all processing is done locally. There is no api. Uses whisper cpp and argo
 - See examples for usage
 	- Setup config.tsv (tab delimited, seperate options by tab)
 	- Need to set an english only and nonenglish model as below in config
-		C:\Software\whisper.cpp\models\ggml-large-v3-turbo-q5_0.bin	Model	0	nonenglishmodel
-		C:\Software\whisper.cpp\models\ggml-small.en-q5_0.bin	Model	0	englishmodel
+		C:\Software\whisper.cpp\models\ggml-large-v3-turbo-q5_0.bin	Model	nonenglishmodel
+		C:\Software\whisper.cpp\models\ggml-small.en-q5_0.bin	Model	englishmodel
 	- Need to set at least 1 videos path:
-		D:\Share\VIDEOS\Movies	Movies	0	videopath
+		D:\Share\VIDEOS\Movies	Movies	videopath
 	- Need to set a temporary directory
-		D:\Share\tempgensubtitles	Temp	0	tempdir
+		D:\Share\tempgensubtitles	Temp	tempdir
 
 - Usage Command Line:
 	translatevideo
