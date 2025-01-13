@@ -209,7 +209,9 @@ def run_whisper_cli(englishmodel, nonenglishmodel,video_path, output_dir,lang_co
         error = 1
     return error
 
-def move_output_file(video_dir, temp_directory, video_file_name,log_filepath):
+def move_output_file(video_path):
+    video_dir = os.path.dirname(video_path)
+    video_file_name = os.path.splitext(os.path.basename(video_path))[0]
     # Move the output file from tempwavefiles to the video file directory
     final_path = os.path.join(video_dir, f"{video_file_name}_ai.en.sdh.srt")
     output_file = os.path.join(temp_directory, f"{video_file_name}_ai.en.sdh.srt")
@@ -221,36 +223,7 @@ def filter_groups(group):
         return group.iloc[0:0]
     return group
         
-def process_videos(tempwavefiles,dirname,englishmodel, nonenglishmodel):
-    # Read the tab-delimited file
-    log_filepath = f'GenAI_Logs/GenAILog_{dirname}.txt'
-    utilities.remove_file(log_filepath)
-    subtitles_df = pd.read_csv(f'GenAI_Logs/df_{dirname}.tsv', sep='\t')
-    grouped_df = subtitles_df.groupby('filepath')
 
-    filtered_groups_no_subtitles = grouped_df.apply(filter_groups).reset_index(drop=True)
-    filtered_groups_no_subtitles = filtered_groups_no_subtitles.groupby('filepath').nth(0).reset_index(drop=True)
-    filtered_groups_no_subtitles.to_csv('GenAI_Logs/filtered_groups_' + dirname + '.tsv', sep='\t', index=False, quoting=csv.QUOTE_NONE)
-
-    for index, row in filtered_groups_no_subtitles.iterrows():
-        video_path = row['filepath']
-        video_path_file_name = os.path.splitext(os.path.basename(video_path))[0]
-        utilities.append_to_file(log_filepath, 'Processing video file: ' + video_path)
-        top_audio_stream, top_audio_language = get_top_audio_stream(video_path,log_filepath)
-        convert_audio_to_wav(video_path, tempwavefiles,top_audio_stream,log_filepath)
-        language, lang_code = get_language(tempwavefiles, nonenglishmodel,video_path, top_audio_language, log_filepath)
-        if lang_code != 'auto':
-            utilities.append_to_file(log_filepath, '      Generating subtitles for audio stream index: ' + str(top_audio_stream) + ', audio language: ' + str(lang_code))
-            error = run_whisper_cli(englishmodel, nonenglishmodel,video_path, tempwavefiles,lang_code,log_filepath)
-            if(error == 0):
-                # Move the output .srt file
-                directory = os.path.dirname(video_path)
-                move_output_file(directory,tempwavefiles,video_path_file_name,log_filepath)
-            else:
-                    utilities.append_to_file(log_filepath, f'      Error: {error} in Transcription / Translating File. Skipping: {video_path}')
-        else:
-            utilities.append_to_file(log_filepath, f'      Language Not recognized. Skipping {video_path}')
-        remove_files_with_prefix(tempwavefiles, video_path_file_name,log_filepath)
         
 def genaisubtitles(tempdir, filepathlist, englishmodel, nonenglishmodel):
     # Create the temp directory if it doesn't exist
@@ -258,3 +231,45 @@ def genaisubtitles(tempdir, filepathlist, englishmodel, nonenglishmodel):
     for file in filepathlist:
         filepath,name = file
         process_videos(tempdir,name,englishmodel, nonenglishmodel)
+        
+class subtitlegenerator:
+    def __init__(self, tempdir, dirinfo, englishmodel, nonenglishmodel):
+        self.tempdir = tempdir
+        self.filepath, self.name = dirinfo
+        self.englishmodel = englishmodel
+        self.nonenglishmodel = nonenglishmodel
+        log_filepath = f'GenAI_Logs/GenAILog_{self.name}.txt'
+        self.logger = utilities.mylogger(log_filepath)
+        
+    def process_videos():
+        # Read the tab-delimited file
+        log_filepath = f'GenAI_Logs/GenAILog_{self.name}.txt'
+        utilities.remove_file(log_filepath)
+        subtitles_df = pd.read_csv(f'GenAI_Logs/df_{self.name}.tsv', sep='\t')
+        grouped_df = subtitles_df.groupby('filepath')
+
+        filtered_groups_no_subtitles = grouped_df.apply(filter_groups).reset_index(drop=True)
+        filtered_groups_no_subtitles = filtered_groups_no_subtitles.groupby('filepath').nth(0).reset_index(drop=True)
+        filtered_groups_no_subtitles.to_csv(f'GenAI_Logs/filtered_groups_{self.name}.tsv', sep='\t', index=False, quoting=csv.QUOTE_NONE)
+
+        for index, row in filtered_groups_no_subtitles.iterrows():
+            video_path = row['filepath']
+            video_path_file_name = os.path.splitext(os.path.basename(video_path))[0]
+            utilities.append_to_file(log_filepath, 'Processing video file: ' + video_path)
+            top_audio_stream, top_audio_language = get_top_audio_stream(video_path,log_filepath)
+            convert_audio_to_wav(video_path, tempwavefiles,top_audio_stream,log_filepath)
+            language, lang_code = get_language(tempwavefiles, nonenglishmodel,video_path, top_audio_language, log_filepath)
+            if lang_code != 'auto':
+                self.logger.append_log(f'Generating subtitles for audio stream index: {str(top_audio_stream)}, audio language: {str(lang_code)}')
+                error = run_whisper_cli(video_path,lang_code)
+                if(error == 0):
+                    # Move the output .srt file
+                    directory = os.path.dirname(video_path)
+                    move_output_file(directory,tempwavefiles,video_path_file_name,log_filepath)
+                else:
+                    utilities.append_to_file(log_filepath, f'      Error: {error} in Transcription / Translating File. Skipping: {video_path}')
+            else:
+                utilities.append_to_file(log_filepath, f'      Language Not recognized. Skipping {video_path}')
+            remove_files_with_prefix(tempwavefiles, video_path_file_name,log_filepath)
+        
+
