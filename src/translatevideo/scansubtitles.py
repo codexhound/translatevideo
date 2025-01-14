@@ -52,7 +52,7 @@ def check_english_subtitles(video_path,subtitles_df):
 
 
         
-def process_videos(directory,table_path):
+def process_videos(directory,tablepath):
     # Recursively search through the directory for video files
     # Define the columns and create an empty DataFrame
     columns = ['filepath', 'has__english_subtitles', 'subtitle_language', 'subtitle_path']
@@ -74,11 +74,14 @@ def process_videos(directory,table_path):
                         'subtitle_path': '',
                         'subtitle_stream': ''
                     }
+    subtitles_df['ID'] = range(1, len(subtitles_df) + 1)
                 
     # Save the DataFrame to a tab-delimited CSV file without quotes
-    subtitles_df.to_csv(f'GenAI_Logs/{table_path}', sep='\t', index=False, quoting=csv.QUOTE_NONE)
+    subtitles_df.to_csv(tablepath, sep='\t', index=False, quoting=csv.QUOTE_NONE)
     
-def scansubtitles(filepathlist):
+def scansubtitles(filepathlist, rescan):
     for file in filepathlist:
         filepath,name = file
-        process_videos(filepath,f'df_{name}.tsv')
+        tablepath = f'GenAI_Logs/df_{name}.tsv'
+        if not os.path.exists(file_path) or rescan:
+            process_videos(filepath,tablepath)

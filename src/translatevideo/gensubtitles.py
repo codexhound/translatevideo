@@ -2,8 +2,13 @@ import translatevideo.scansubtitles as scansubtitles
 import translatevideo.genaisubtitles as genaisubtitles
 import os
 import pandas as pd
+import argparse
 
 def gensubtitles():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--rescan", help="rescan even if no prior scan done",action="store_true")
+    args = parser.parse_args()
+
     # Path to the TSV file
     config_path = 'config.tsv'
 
@@ -44,7 +49,7 @@ def gensubtitles():
     print(f'Temp Directory: {tempdir}')
     print(f'Video Processing Info: {filepathlist}')
 
-    scansubtitles.scansubtitles(filepathlist)
+    scansubtitles.scansubtitles(filepathlist,args.verbose)
     genaisubtitles.genaisubtitles(tempdir, filepathlist, englishmodel, nonenglishmodel)
 	
 # Defining main function

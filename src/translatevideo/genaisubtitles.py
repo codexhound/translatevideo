@@ -225,7 +225,8 @@ def process_videos(tempwavefiles,dirname,englishmodel, nonenglishmodel):
     # Read the tab-delimited file
     log_filepath = f'GenAI_Logs/GenAILog_{dirname}.txt'
     utilities.remove_file(log_filepath)
-    subtitles_df = pd.read_csv(f'GenAI_Logs/df_{dirname}.tsv', sep='\t')
+    subtitles_frame_filepath = f'GenAI_Logs/df_{dirname}.tsv'
+    subtitles_df = pd.read_csv(subtitles_frame_filepath, sep='\t')
     grouped_df = subtitles_df.groupby('filepath')
 
     filtered_groups_no_subtitles = grouped_df.apply(filter_groups).reset_index(drop=True)
@@ -234,6 +235,7 @@ def process_videos(tempwavefiles,dirname,englishmodel, nonenglishmodel):
 
     for index, row in filtered_groups_no_subtitles.iterrows():
         video_path = row['filepath']
+        video_ID = row['ID']
         video_path_file_name = os.path.splitext(os.path.basename(video_path))[0]
         utilities.append_to_file(log_filepath, 'Processing video file: ' + video_path)
         top_audio_stream, top_audio_language = get_top_audio_stream(video_path,log_filepath)
@@ -246,6 +248,16 @@ def process_videos(tempwavefiles,dirname,englishmodel, nonenglishmodel):
                 # Move the output .srt file
                 directory = os.path.dirname(video_path)
                 move_output_file(directory,tempwavefiles,video_path_file_name,log_filepath)
+                output_file = os.path.join(temp_directory, f"{video_file_name}_ai.en.sdh.srt")
+                ##successfully created subtitles:
+                subtitles_df.loc[len(subtitles_df)] = {
+                    'filepath': video_path,
+                    'has__english_subtitles': True,
+                    'subtitle_language': 'English',
+                    'subtitle_path': output_file,
+                    'subtitle_stream': ''
+                }
+                subtitles_df.to_csv(subtitles_frame_filepath, sep='\t', index=False, quoting=csv.QUOTE_NONE)
             else:
                     utilities.append_to_file(log_filepath, f'      Error: {error} in Transcription / Translating File. Skipping: {video_path}')
         else:
