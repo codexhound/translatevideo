@@ -45,6 +45,7 @@ Free, all processing is done locally. There is no api. Uses whisper cpp and argo
 
 - Usage Command Line:
 	translatevideo
+	translatevideo --rescan ## this rescans directories for subtitles even if database file exists for video path
 - Usuage Python
 	import translatevideo.gensubtitles as gensubtitles
 	gensubtitles.generatesubtitles()

@@ -248,7 +248,7 @@ def process_videos(tempwavefiles,dirname,englishmodel, nonenglishmodel):
                 # Move the output .srt file
                 directory = os.path.dirname(video_path)
                 move_output_file(directory,tempwavefiles,video_path_file_name,log_filepath)
-                output_file = os.path.join(temp_directory, f"{video_file_name}_ai.en.sdh.srt")
+                output_file = os.path.join(directory, f"{video_path_file_name}_ai.en.sdh.srt")
                 ##successfully created subtitles:
                 subtitles_df.loc[len(subtitles_df)] = {
                     'filepath': video_path,
@@ -259,7 +259,7 @@ def process_videos(tempwavefiles,dirname,englishmodel, nonenglishmodel):
                 }
                 subtitles_df.to_csv(subtitles_frame_filepath, sep='\t', index=False, quoting=csv.QUOTE_NONE)
             else:
-                    utilities.append_to_file(log_filepath, f'      Error: {error} in Transcription / Translating File. Skipping: {video_path}')
+                utilities.append_to_file(log_filepath, f'      Error: {error} in Transcription / Translating File. Skipping: {video_path}')
         else:
             utilities.append_to_file(log_filepath, f'      Language Not recognized. Skipping {video_path}')
         remove_files_with_prefix(tempwavefiles, video_path_file_name,log_filepath)

@@ -83,5 +83,5 @@ def scansubtitles(filepathlist, rescan):
     for file in filepathlist:
         filepath,name = file
         tablepath = f'GenAI_Logs/df_{name}.tsv'
-        if not os.path.exists(file_path) or rescan:
+        if not os.path.exists(tablepath) or rescan:
             process_videos(filepath,tablepath)

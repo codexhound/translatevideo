@@ -49,7 +49,7 @@ def gensubtitles():
     print(f'Temp Directory: {tempdir}')
     print(f'Video Processing Info: {filepathlist}')
 
-    scansubtitles.scansubtitles(filepathlist,args.verbose)
+    scansubtitles.scansubtitles(filepathlist,args.rescan)
     genaisubtitles.genaisubtitles(tempdir, filepathlist, englishmodel, nonenglishmodel)
 	
 # Defining main function
