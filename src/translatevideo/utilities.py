@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 
 # Function to append to a key in the dictionary
 def append_to_key(dictionary, key, value):
@@ -51,7 +52,7 @@ def remove_file(file_path):
 def move_and_rename_file(src, dst,log_filepath):
     if os.path.exists(src):
         try:
-            os.rename(src, dst)
+            shutil.move(src, dst)
             append_to_file(log_filepath,f"      File moved and renamed from {src} to {dst}")
         except FileNotFoundError:
             append_to_file(log_filepath,f"      The file {src} does not exist.")
