@@ -8,6 +8,7 @@ import csv
 import translatevideo.utilities as utilities
 import translatevideo.concatsrtfiles as concatsrtfiles
 import translatevideo.removeduplicatelinessrt as removeduplicatelinessrt
+from pydub import AudioSegment
 #import translatevideo.translatesrt as translatesrt
 import json
 
@@ -47,20 +48,13 @@ def get_top_audio_stream(video_path,log_filepath):
     
     return top_audio_stream, top_audio_language
     
-def get_filenames_split_wav(directory,video_path):
+def get_filenames_split_wav(directory,video_path,numfiles):
     # Define the directory and filename pattern
     file_name = os.path.splitext(os.path.basename(video_path))[0]
-    filename_pattern = file_name + '_'
-
-    # Get the list of files in the directory
-    files = os.listdir(directory)
-
-    # Filter the files that match the pattern
-    output_files = [f for f in files if f.startswith(filename_pattern) and f.endswith('.wav')]
-    
     filelist = []
     
-    for file in output_files:
+    for count in range(numfiles):
+        file = file_name + '_' + str(count).zfill(3) + '.wav'
         filepath = os.path.join(directory, file)
         filelist.append(filepath)
         
@@ -95,10 +89,10 @@ def convert_audio_to_wav(video_path, output_dir,top_audio_stream,log_filepath):
     wav_path = os.path.join(output_dir, f"{file_name}.wav")
     split_wav_path = os.path.join(output_dir, f"{file_name}")
     whisper_json_path = os.path.join(output_dir, f"{file_name}.json")
-    video_path=f'\"{video_path}\"'
-    wav_path=f'\"{wav_path}\"'
+    video_path1=f'\"{video_path}\"'
+    wav_path1=f'\"{wav_path}\"'
     # Convert the first audio track to .wav using ffmpeg
-    command = f'ffmpeg -y -i {video_path} -map 0:a:{str(top_audio_stream)} -vn -acodec pcm_s16le -ac 2 -ar 16000 {wav_path}'
+    command = f'ffmpeg -y -i {video_path1} -map 0:a:{str(top_audio_stream)} -vn -acodec pcm_s16le -ac 2 -ar 16000 {wav_path1}'
     utilities.append_to_file(log_filepath, '      Running ffmpeg command: ' + str(command))
     error = 0
     try:
@@ -107,14 +101,19 @@ def convert_audio_to_wav(video_path, output_dir,top_audio_stream,log_filepath):
         error = e.returncode
         utilities.append_to_file(log_filepath, '      Failed to run ffpmeg command, errorcode: ' + str(error))
     
-    command = f'ffmpeg -i {wav_path} -f segment -segment_time 300 -c copy \"{split_wav_path}_%03d.wav\"'
+    audio = AudioSegment.from_file(wav_path)
+    duration = len(audio) / 1000.0
+    numfiles = utilities.roundupdiv(duration, 300)
+    utilities.append_to_file(log_filepath, f'      Audio runtime of file "{wav_path}": {duration}, numfiles: {numfiles}')
+    
+    command = f'ffmpeg -i {wav_path1} -f segment -segment_time 300 -c copy \"{split_wav_path}_%03d.wav\"'
     utilities.append_to_file(log_filepath, '      Running ffmpeg command: ' + str(command))
     try:
         subprocess.check_output(command)
     except subprocess.CalledProcessError as e:
         error = e.returncode
         utilities.append_to_file(log_filepath, '      Failed to run ffpmeg command, errorcode: ' + str(error))
-    return error
+    return error, numfiles
 
 def remove_files_with_prefix(directory, prefix,log_filepath):
     # List all files in the directory
@@ -130,14 +129,12 @@ def remove_files_with_prefix(directory, prefix,log_filepath):
             except Exception as e:
                 utilities.append_to_file(log_filepath,f"      Error removing file {file_path}: {e}")
     
-def concat_subtitle_files(output_dir,file_name,wavelist):
+def concat_subtitle_files(output_dir,file_name,numfiles):
     subtitle_files = []
-    count = 0
     final_subtile_file = os.path.join(output_dir, f"{file_name}1.srt")
-    for x in range(len(wavelist)):
+    for count in range(numfiles):
         filename = os.path.join(output_dir, f"{file_name}_{str(count)}.srt")
         subtitle_files.append(filename)
-        count = count + 1
     concatsrtfiles.concatenate_and_adjust_srt_files(final_subtile_file, 300000, subtitle_files)
     
 def get_language(output_dir, nonenglishmodel, video_path, top_audio_language, log_filepath):
@@ -148,15 +145,14 @@ def get_language(output_dir, nonenglishmodel, video_path, top_audio_language, lo
     utilities.append_to_file(log_filepath, f'      Found language: {language}, Language Code: {lang_code}')
     return language, lang_code
 
-def run_whisper_cli(englishmodel, nonenglishmodel,video_path, output_dir,lang_code,log_filepath):
+def run_whisper_cli(numfiles,englishmodel, nonenglishmodel,video_path, output_dir,lang_code,log_filepath):
     # Run the whisper-cli command
-    wavelist = get_filenames_split_wav(output_dir,video_path)
+    wavelist = get_filenames_split_wav(output_dir,video_path,numfiles)
     file_name = os.path.splitext(os.path.basename(video_path))[0]
     srt_path = os.path.join(output_dir, f"{file_name}")
     
     count = 0
     error = 0
-
     for file in wavelist:
         wave_file_quotes = f'\"{file}\"'
         english_model_quotes = f'\"{englishmodel}\"'
@@ -237,11 +233,11 @@ def process_videos(tempwavefiles,dirname,englishmodel, nonenglishmodel):
         video_path_file_name = os.path.splitext(os.path.basename(video_path))[0]
         utilities.append_to_file(log_filepath, 'Processing video file: ' + video_path)
         top_audio_stream, top_audio_language = get_top_audio_stream(video_path,log_filepath)
-        convert_audio_to_wav(video_path, tempwavefiles,top_audio_stream,log_filepath)
+        error, numfiles = convert_audio_to_wav(video_path, tempwavefiles,top_audio_stream,log_filepath)
         language, lang_code = get_language(tempwavefiles, nonenglishmodel,video_path, top_audio_language, log_filepath)
         if lang_code != 'auto':
             utilities.append_to_file(log_filepath, '      Generating subtitles for audio stream index: ' + str(top_audio_stream) + ', audio language: ' + str(lang_code))
-            error = run_whisper_cli(englishmodel, nonenglishmodel,video_path, tempwavefiles,lang_code,log_filepath)
+            error = run_whisper_cli(numfiles, englishmodel, nonenglishmodel,video_path, tempwavefiles,lang_code,log_filepath)
             if(error == 0):
                 # Move the output .srt file
                 directory = os.path.dirname(video_path)

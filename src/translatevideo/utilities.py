@@ -1,6 +1,7 @@
 import os
 import re
 import shutil
+import math
 
 # Function to append to a key in the dictionary
 def append_to_key(dictionary, key, value):
@@ -24,6 +25,10 @@ def convert_string_to_int(text):
     except:
         error = 1
     return intvalue
+    
+def roundupdiv(numerator, denominator):
+    result = math.ceil(float(numerator) / float(denominator))
+    return result
 
 def append_to_file(file_path, content_to_append):
     try:

@@ -20,8 +20,7 @@ classifiers = [
 dependencies = [
   "pycountry",
   "pandas",
-  "translatehtml",
-  "argostranslate",
+  "pydub",
   "argparse",
 ]
 [project.urls]
