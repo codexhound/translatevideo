@@ -67,3 +67,10 @@ def move_and_rename_file(src, dst,log_filepath):
             append_to_file(log_filepath,f"      An error occurred: {e}")
     else:
         append_to_file(log_filepath,f"      File to be moved doesn't exist: {src}")
+
+class logger:
+    def __init__(self, filepath):
+        self.filepath = filepath
+        remove_file(self.filepath)
+    def add_to_log(self,content_to_append):
+        append_to_file(self.filepath, content_to_append)
