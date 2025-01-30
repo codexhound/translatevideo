@@ -53,20 +53,6 @@ def remove_file(file_path):
         print(f"Permission denied: {file_path}")
     except Exception as e:
         print(f"Error removing file {file_path}: {e}")
-        
-def move_and_rename_file(src, dst,log_filepath):
-    if os.path.exists(src):
-        try:
-            shutil.move(src, dst)
-            append_to_file(log_filepath,f"      File moved and renamed from {src} to {dst}")
-        except FileNotFoundError:
-            append_to_file(log_filepath,f"      The file {src} does not exist.")
-        except PermissionError:
-            append_to_file(log_filepath,f"      Permission denied: cannot move {src} to {dst}.")
-        except Exception as e:
-            append_to_file(log_filepath,f"      An error occurred: {e}")
-    else:
-        append_to_file(log_filepath,f"      File to be moved doesn't exist: {src}")
 
 class logger:
     def __init__(self, filepath):
@@ -74,3 +60,22 @@ class logger:
         remove_file(self.filepath)
     def add_to_log(self,content_to_append):
         append_to_file(self.filepath, content_to_append)
+
+def move_and_rename_file(src, dst,logger = None):
+    if os.path.exists(src):
+        try:
+            shutil.move(src, dst)
+            if logger != None:
+                logger.add_to_log(f"  File moved and renamed from {src} to {dst}")
+        except FileNotFoundError:
+            if logger != None:
+                logger.add_to_log(f"  The file {src} does not exist.")
+        except PermissionError:
+            if logger != None:
+                logger.add_to_log(f"  Permission denied: cannot move {src} to {dst}.")
+        except Exception as e:
+            if logger != None:
+                logger.add_to_log(f"  An error occurred: {e}")
+    else:
+        if logger != None:
+            logger.add_to_log(f"  File to be moved doesn't exist: {src}")

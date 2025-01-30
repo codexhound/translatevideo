@@ -9,6 +9,8 @@ import csv
 import translatevideo.utilities as utilities
 import translatevideo.concatsrtfiles as concatsrtfiles
 from pydub import AudioSegment
+import threading
+#import time
 
 def remove_adjacent_duplicate_text_lines(file_path):
 	with open(file_path, 'r', encoding='utf-8') as file:
@@ -42,7 +44,7 @@ def convert_language_code(three_letter_code):
 		# If the language code is not found, return None or handle the exception as needed
 		return 'auto'
 
-def remove_files_with_prefix(directory, prefix,logger):
+def remove_files_with_prefix(directory, prefix,logger=None):
 	# List all files in the directory
 	files = os.listdir(directory)
 	# Iterate through the files
@@ -52,9 +54,11 @@ def remove_files_with_prefix(directory, prefix,logger):
 			file_path = os.path.join(directory, file)
 			try:
 				os.remove(file_path)
-				logger.add_to_log(f"	Removed file: {file_path}")
+				if logger != None:
+					logger.add_to_log(f"	Removed file: {file_path}")
 			except Exception as e:
-				logger.add_to_log(f"	Error removing file {file_path}: {e}")
+				if logger != None:
+					logger.add_to_log(f"	Error removing file {file_path}: {e}")
 		
 # Filter out rows where any row in the group has English subtitles
 def filter_groups(group):
@@ -76,8 +80,9 @@ def run_command(command, name = '', logger=None):
 	return error, output
 	
 class transcribe:
-	def __init__(self,tempdir, englishmodel, nonenglishmodel):
+	def __init__(self,threads,tempdir, englishmodel, nonenglishmodel):
 		os.makedirs(tempdir, exist_ok=True)
+		self.threads = threads
 		self.tempdir = tempdir
 		self.englishmodel = englishmodel
 		self.nonenglishmodel = nonenglishmodel
@@ -164,30 +169,79 @@ class transcribe:
 	def concat_subtitle_files(self):
 		subtitle_files = []
 		self.final_srt_temp_path = os.path.join(self.tempdir, f"{self.video_path_file_name}_ai.en.sdh.srt.srt")
+		self.logger.add_to_log(f'	Merging Subtitle files into {self.final_srt_temp_path}')
 		for count in range(self.numfiles):
 			filename = os.path.join(self.tempdir, f"{self.video_path_file_name}_{str(count)}.srt")
 			subtitle_files.append(filename)
 		concatsrtfiles.concatenate_and_adjust_srt_files(self.final_srt_temp_path, 300000, subtitle_files)
 
+	def process_whisper_output(self):
+		error = 0
+		for returnv in self.threadoutputlist:
+			error, output = returnv
+			if error > 0 or error < 0:
+				return error, True
+		return error, False
+
+	def run_thead(self,index,command, name, logger):
+		self.threadoutputlist[index] = run_command(command, name, logger)
+		#self.logger.add_to_log(f'	thread index:  {index}')
+
+	def startthreads(self):
+		for thread in self.threadlist:
+			thread.start()
+
+	def jointhreads(self):
+		for thread in self.threadlist:
+			thread.join()
+
+	def run_whisper_threads(self):
+		self.startthreads()
+		self.jointhreads()
+		#time.sleep(2.5)
+		#self.logger.add_to_log(f'	numOutputs: {len(self.threadoutputlist)}')
+		#self.logger.add_to_log(f'	numThreads: {len(self.threadlist)}')
+		error, haserror = self.process_whisper_output()
+		self.threadindex = 0
+		self.threadoutputlist = []
+		self.threadlist = []
+		return error, haserror
+
 	def run_whisper_cli(self):
 		self.get_filenames_split_wav()
 		count = 0
 		error = 0
+		self.threadindex = 0
+		self.threadoutputlist = []
+		self.threadlist = []
+		english_model_quotes = f'\"{self.englishmodel}\"'
+		nonenglish_model_quotes = f'\"{self.nonenglishmodel}\"'
 		for file in self.wavelist:
+
+			if len(self.threadlist) >= self.threads: ## no more threads, start and wait for the ones in queue
+				error, haserror = self.run_whisper_threads()
+				if haserror:
+					return error
+
 			wave_file_quotes = f'\"{file}\"'
-			english_model_quotes = f'\"{self.englishmodel}\"'
-			nonenglish_model_quotes = f'\"{self.nonenglishmodel}\"'
+			
+			command = f''
 			if self.lang_code == 'en':
 				command = f'whisper-cli -m {english_model_quotes} -f {wave_file_quotes} --output-srt --output-file \"{self.split_file_path}_{str(count)}\" -l {self.lang_code} -t 8 -pp -bs 8'
-				error, output = run_command(command, name = 'whisper-cli', logger=self.logger)
 			else:
 				command = f'whisper-cli -m {nonenglish_model_quotes} -f {wave_file_quotes} --output-srt --output-file \"{self.split_file_path}_{str(count)}\" -l {self.lang_code} -tr -t 8 -pp -bs 8'
-				error, output = run_command(command, name = 'whisper-cli', logger=self.logger)
-			if error > 0 or error < 0:
-				return error
+
+			self.threadoutputlist.append((0,0))
+			self.threadlist.append(threading.Thread(target=self.run_thead, args=(self.threadindex,command,'whisper-cli',self.logger,)))
+
 			count = count + 1
+			self.threadindex = self.threadindex + 1
+
+		## finish running any additional threads
+		error, haserror = self.run_whisper_threads()
+		if haserror:
+			return error
 		
-		self.logger.add_to_log(f'	Merging Subtitle files into {self.video_path_file_name}1.srt')
 		self.concat_subtitle_files()
 		
 		final_subtile_file_quotes = f'\"{self.final_srt_temp_path}\"'
@@ -268,8 +322,8 @@ class transcribe:
 		for index, row in self.filtered_groups_no_subtitles.iterrows():
 			self.process_object(row)
 		
-def genaisubtitles(tempdir, filepathlist, englishmodel, nonenglishmodel):
-	transcribe_object = transcribe(tempdir, englishmodel, nonenglishmodel)
+def genaisubtitles(threads,tempdir, filepathlist, englishmodel, nonenglishmodel):
+	transcribe_object = transcribe(threads,tempdir, englishmodel, nonenglishmodel)
 	for file in filepathlist:
 		filepath,dirname = file
 		transcribe_object.process_videos(dirname)
