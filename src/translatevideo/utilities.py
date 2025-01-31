@@ -66,16 +66,16 @@ def move_and_rename_file(src, dst,logger = None):
         try:
             shutil.move(src, dst)
             if logger != None:
-                logger.add_to_log(f"  File moved and renamed from {src} to {dst}")
+                logger.add_to_log(f"	File moved and renamed from {src} to {dst}")
         except FileNotFoundError:
             if logger != None:
-                logger.add_to_log(f"  The file {src} does not exist.")
+                logger.add_to_log(f"	The file {src} does not exist.")
         except PermissionError:
             if logger != None:
-                logger.add_to_log(f"  Permission denied: cannot move {src} to {dst}.")
+                logger.add_to_log(f"	Permission denied: cannot move {src} to {dst}.")
         except Exception as e:
             if logger != None:
-                logger.add_to_log(f"  An error occurred: {e}")
+                logger.add_to_log(f"	An error occurred: {e}")
     else:
         if logger != None:
             logger.add_to_log(f"  File to be moved doesn't exist: {src}")

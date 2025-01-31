@@ -1,5 +1,6 @@
 import translatevideo.scansubtitles as scansubtitles
 import translatevideo.genaisubtitles as genaisubtitles
+import translatevideo.utilities as utilities
 import os
 import pandas as pd
 import argparse
@@ -60,6 +61,13 @@ def gensubtitles():
 
     scansubtitles.scansubtitles(filepathlist,args.rescan)
     genaisubtitles.genaisubtitles(threads, tempdir, filepathlist, englishmodel, nonenglishmodel)
+
+    ##remove tables after everything finishes
+    for file in filepathlist:
+        filepath,name = file
+        tablepath = f'GenAI_Logs/df_{name}.tsv'
+        if os.path.exists(tablepath):
+            utilities.remove_file(tablepath)
 
     return
 	
