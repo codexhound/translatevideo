@@ -105,22 +105,43 @@ class transcribe:
 		# Run ffprobe to get audio track information
 		video_path=f'\"{self.video_path}\"'
 		audio_tracks = None
-		command = f'ffprobe -v error -show_entries stream=index:stream_tags=language -select_streams a -of json {video_path}'
+		command = f'ffprobe -v error -show_entries stream=index:stream_tags=language -of json {video_path}'
 		error, audio_tracks = run_command(command, name = 'ffprobe', logger=self.logger)
 		audio_tracks = json.loads(audio_tracks)
 		
 		top_audio_stream = None
 		top_audio_language = None
+		first_audio_stream = None
+		first_audio_language = None
+		countaudio = 0
+		countstream = 0
+		foundfirstaudio = False
+		foundtopaudio = False
 		for stream in audio_tracks.get('streams', []):
 			language = stream['tags'].get('language', 'Unknown')
-			if language == 'eng':
-				top_audio_stream = stream['index'] - 1
-				top_audio_language = language
-				break
+			print(str(stream))
+			if 'audio' in str(stream).lower():
+				print('found audio')
+				if not foundfirstaudio:
+					first_audio_stream = countstream
+					first_audio_language = language
+					foundfirstaudio = True
+				countaudio = countaudio + 1
+				if language == 'eng' and not foundtopaudio:
+					top_audio_stream = countstream
+					top_audio_language = language
+					foundtopaudio = True
+			countstream = countstream + 1
 		
-		if top_audio_stream is None and audio_tracks.get('streams'):
-			top_audio_stream = audio_tracks['streams'][0]['index'] - 1
-			top_audio_language = audio_tracks['streams'][0]['tags'].get('language', 'Unknown')
+		if top_audio_stream is None:
+			top_audio_stream = first_audio_stream
+			top_audio_language = first_audio_language
+
+		if top_audio_stream is not None:
+			top_audio_stream = top_audio_stream - (countstream-countaudio)
+		else:
+			top_audio_stream = 0
+			top_audio_language = 'Unknown'
 			
 		self.top_audio_stream = top_audio_stream
 		self.top_audio_language = top_audio_language
@@ -135,6 +156,9 @@ class transcribe:
 		# Convert the first audio track to .wav using ffmpeg
 		command = f'ffmpeg -y -i {video_path1} -map 0:a:{str(self.top_audio_stream)} -vn -acodec pcm_s16le -ac 2 -ar 16000 {wav_path1}'
 		error, output = run_command(command, name = 'ffmpeg', logger=self.logger)
+
+		if error != 0:
+			return error
 		
 		audio = AudioSegment.from_file(self.wav_path)
 		duration = len(audio) / 1000.0
@@ -257,27 +281,30 @@ class transcribe:
 		self.final_directory = os.path.dirname(self.video_path)
 		self.logger.add_to_log('Processing video file: ' + self.video_path)
 		self.get_top_audio_stream()
-		self.convert_audio_to_wav()
-		self.get_language()
-		if(self.lang_code != 'auto'):
-			self.logger.add_to_log(f'	Generating subtitles for audio stream index: {self.top_audio_stream}, audio language: {self.lang_code}')
-			error = self.run_whisper_cli()
-			if error == 0:
-				# Move the output .srt file
-				self.move_output_file()
-				##successfully created subtitles:
-				self.subtitles_df.loc[len(self.subtitles_df)] = {
-					'filepath': self.video_path,
-					'has__english_subtitles': True,
-					'subtitle_language': 'English',
-					'subtitle_path': self.final_srt_path,
-					'subtitle_stream': ''
-				}
-				self.subtitles_df.to_csv(self.subtitles_frame_filepath, sep='\t', index=False, quoting=csv.QUOTE_NONE)
+		error = self.convert_audio_to_wav()
+		if error == 0:
+			self.get_language()
+			if(self.lang_code != 'auto'):
+				self.logger.add_to_log(f'	Generating subtitles for audio stream index: {self.top_audio_stream}, audio language: {self.lang_code}')
+				error = self.run_whisper_cli()
+				if error == 0:
+					# Move the output .srt file
+					self.move_output_file()
+					##successfully created subtitles:
+					self.subtitles_df.loc[len(self.subtitles_df)] = {
+						'filepath': self.video_path,
+						'has__english_subtitles': True,
+						'subtitle_language': 'English',
+						'subtitle_path': self.final_srt_path,
+						'subtitle_stream': ''
+					}
+					self.subtitles_df.to_csv(self.subtitles_frame_filepath, sep='\t', index=False, quoting=csv.QUOTE_NONE)
+				else:
+					self.logger.add_to_log(f'	Error: {error} in Transcription / Translating File. Skipping: {self.video_path}')
 			else:
-				self.logger.add_to_log(f'	Error: {error} in Transcription / Translating File. Skipping: {self.video_path}')
+				self.logger.add_to_log(f'	Language Not recognized. Skipping {self.video_path}')
 		else:
-			self.logger.add_to_log(f'	Language Not recognized. Skipping {self.video_path}')
+			self.logger.add_to_log(f'	Error: {error} in Audio Copy. Skipping: {self.video_path}')
 		remove_files_with_prefix(self.tempdir, self.video_path_file_name, self.logger)
 
 	def init_path_object(self,dirname):
