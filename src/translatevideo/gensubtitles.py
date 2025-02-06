@@ -10,6 +10,7 @@ def gensubtitles():
     parser.add_argument("--rescan", help="rescan even if no prior scan done",action="store_true")
     parser.add_argument('--config_path', help='Config path')
     parser.add_argument('--threads', type = int, help='number of whisper batches at once (memory needed)')
+    parser.add_argument('--skipnonenglish', action="store_true", help='skip non english audio')
     args = parser.parse_args()
 
     # Path to the TSV file
@@ -60,7 +61,7 @@ def gensubtitles():
     print(f'Video Processing Info: {filepathlist}')
 
     scansubtitles.scansubtitles(filepathlist,args.rescan)
-    genaisubtitles.genaisubtitles(threads, tempdir, filepathlist, englishmodel, nonenglishmodel)
+    genaisubtitles.genaisubtitles(threads, tempdir, filepathlist, englishmodel, nonenglishmodel,args.skipnonenglish)
 
     ##remove tables after everything finishes
     for file in filepathlist:

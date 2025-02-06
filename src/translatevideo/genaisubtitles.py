@@ -80,12 +80,13 @@ def run_command(command, name = '', logger=None):
 	return error, output
 	
 class transcribe:
-	def __init__(self,threads,tempdir, englishmodel, nonenglishmodel):
+	def __init__(self,threads,tempdir, englishmodel, nonenglishmodel,skipnonenglish):
 		os.makedirs(tempdir, exist_ok=True)
 		self.threads = threads
 		self.tempdir = tempdir
 		self.englishmodel = englishmodel
 		self.nonenglishmodel = nonenglishmodel
+		self.skipnonenglish = skipnonenglish
 
 	def get_language_from_whisper(self):
 		nonenglish_model_quotes = f'\"{self.nonenglishmodel}\"'
@@ -118,8 +119,11 @@ class transcribe:
 		foundfirstaudio = False
 		foundtopaudio = False
 		for stream in audio_tracks.get('streams', []):
-			language = stream['tags'].get('language', 'Unknown')
-			print(str(stream))
+			tags = stream.get('tags',[])
+			if tags == []:
+				language = 'Unknown'
+			else:
+				language = stream['tags'].get('language', 'Unknown')
 			if 'audio' in str(stream).lower():
 				print('found audio')
 				if not foundfirstaudio:
@@ -284,7 +288,7 @@ class transcribe:
 		error = self.convert_audio_to_wav()
 		if error == 0:
 			self.get_language()
-			if(self.lang_code != 'auto'):
+			if self.lang_code != 'auto' and ((self.lang_code == 'en' and self.skipnonenglish) or not self.skipnonenglish):
 				self.logger.add_to_log(f'	Generating subtitles for audio stream index: {self.top_audio_stream}, audio language: {self.lang_code}')
 				error = self.run_whisper_cli()
 				if error == 0:
@@ -349,8 +353,8 @@ class transcribe:
 		for index, row in self.filtered_groups_no_subtitles.iterrows():
 			self.process_object(row)
 		
-def genaisubtitles(threads,tempdir, filepathlist, englishmodel, nonenglishmodel):
-	transcribe_object = transcribe(threads,tempdir, englishmodel, nonenglishmodel)
+def genaisubtitles(threads,tempdir, filepathlist, englishmodel, nonenglishmodel,skipnonenglish):
+	transcribe_object = transcribe(threads,tempdir, englishmodel, nonenglishmodel,skipnonenglish)
 	for file in filepathlist:
 		filepath,dirname = file
 		transcribe_object.process_videos(dirname)
